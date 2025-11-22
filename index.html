@@ -248,433 +248,489 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     
-    <script>
-        // ============ JAVASCRIPT LOGIC ============
+<script>
+    // ============ JAVASCRIPT LOGIC ============
 
-        // --- KONFIGURASI FIREBASE ---
-        // *** GANTI DENGAN KUNCI ANDA DARI KONSOL FIREBASE ***
-        const firebaseConfig = {
-            apiKey: "AIzaSyBIMgGfnCHN67bb9jYVn_tdIACHUFMNfX0",
-            authDomain: "sts2025-bf7ee.firebaseapp.com",
-            projectId: "sts2025-bf7ee",
-            storageBucket: "sts2025-bf7ee.firebasestorage.app",
-            messagingSenderId: "888830159138",
-            appId: "1:888830159138:web:18db263e1923dc87e61d7b",
-            measurementId: "G-N1QZ824EFC"
-        };
+    // --- KONFIGURASI FIREBASE ---
+    // *** GANTI DENGAN KUNCI ANDA DARI KONSOL FIREBASE ***
+    const firebaseConfig = {
+        apiKey: "AIzaSyBIMgGfnCHN67bb9jYVn_tdIACHUFMNfX0",
+        authDomain: "sts2025-bf7ee.firebaseapp.com",
+        projectId: "sts2025-bf7ee",
+        storageBucket: "sts2025-bf7ee.firebasestorage.app",
+        messagingSenderId: "888830159138",
+        appId: "1:888830159138:web:18db263e1923dc87e61d7b",
+        measurementId: "G-N1QZ824EFC"
+    };
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth(); 
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth(); 
 
-        // --- COLLECTION IDS YANG DIUBAH UNTUK MEMADANKAN RULES ---
-        const APP_ID = firebaseConfig.appId; 
-        // Laluan data awam: artifacts/{appId}/public/data/keputusan_acara/{document}
-        const BASE_PATH = `artifacts/${APP_ID}/public/data`;
-        const KEPUTUSAN_COLLECTION_PATH = `${BASE_PATH}/keputusan_acara`;
-        // Mata dan Rekod akan disimpan sebagai dokumen khas di dalam koleksi ini.
-        // -----------------------------------------------------------------
+    // --- COLLECTION IDS YANG DIUBAH UNTUK MEMADANKAN RULES ---
+    const APP_ID = firebaseConfig.appId; 
+    // Laluan data awam: artifacts/{appId}/public/data/keputusan_acara/{document}
+    const BASE_PATH = `artifacts/${APP_ID}/public/data`;
+    const KEPUTUSAN_COLLECTION_PATH = `${BASE_PATH}/keputusan_acara`;
+    // Mata dan Rekod akan disimpan sebagai dokumen khas di dalam koleksi ini.
+    // -----------------------------------------------------------------
 
-        let USER_ROLE = 'User'; 
-        let KEPUTUSAN_KESELURUHAN = []; 
-        
-        let MATA_RUMAH_SUKAN = { 
-            'KUNING': { mata: 0, emas: 0, perak: 0, gangsa: 0 }, 
-            'BIRU': { mata: 0, emas: 0, perak: 0, gangsa: 0 }, 
-            'MERAH': { mata: 0, emas: 0, perak: 0, gangsa: 0 }, 
-            'HIJAU': { mata: 0, emas: 0, perak: 0, gangsa: 0 } 
-        }; 
-        
-        let REKOD_KEJOHANAN = {}; // Disimpan sebagai objek untuk carian yang cepat (Acara_Kategori: {nama, rumah, catatan})
+    let USER_ROLE = 'User'; 
+    let KEPUTUSAN_KESELURUHAN = []; 
+    
+    let MATA_RUMAH_SUKAN = { 
+        'KUNING': { mata: 0, emas: 0, perak: 0, gangsa: 0 }, 
+        'BIRU': { mata: 0, emas: 0, perak: 0, gangsa: 0 }, 
+        'MERAH': { mata: 0, emas: 0, perak: 0, gangsa: 0 }, 
+        'HIJAU': { mata: 0, emas: 0, perak: 0, gangsa: 0 } 
+    }; 
+    
+    let REKOD_KEJOHANAN = {}; // Disimpan sebagai objek untuk carian yang cepat (Acara_Kategori: {nama, rumah, catatan})
 
-        const ACARA_INDIVIDU = ['100 METER', '200 METER', 'LOMPAT JAUH', 'LOMPAT TINGGI', 'LONTAR PELURU', '100 METER BERPAGAR'];
-        const ACARA_RELAY = ['4X100 METER'];
-        const ACARA_PADANG = ['LOMPAT JAUH', 'LOMPAT TINGGI', 'LONTAR PELURU']; 
-        const KATEGORI_UMUR = ['7 TAHUN', '8 TAHUN', '9 TAHUN', '10 TAHUN', '11 TAHUN', '12 TAHUN'];
-        const SKALA_MATA_INDIVIDU = [10, 8, 6, 4, 2]; // 1st hingga 5th
-        const SKALA_MATA_RELAY = [20, 16, 12, 8]; // 1st hingga 4th
-        
-        // ===========================================
-        // FUNGSI FIREBASE (Paling Penting)
-        // ===========================================
+    const ACARA_INDIVIDU = ['100 METER', '200 METER', 'LOMPAT JAUH', 'LOMPAT TINGGI', 'LONTAR PELURU', '100 METER BERPAGAR'];
+    const ACARA_RELAY = ['4X100 METER'];
+    const ACARA_PADANG = ['LOMPAT JAUH', 'LOMPAT TINGGI', 'LONTAR PELURU']; 
+    const KATEGORI_UMUR = ['7 TAHUN', '8 TAHUN', '9 TAHUN', '10 TAHUN', '11 TAHUN', '12 TAHUN'];
+    const SKALA_MATA_INDIVIDU = [6, 4, 3, 1, 1, 1, 1, 1]; // 1st hingga 8th
+    const SKALA_MATA_RELAY = [6, 4, 3, 1, 1, 1, 1, 1]; // 1st hingga 8th
+    
+    // ===========================================
+    // FUNGSI FIREBASE (Paling Penting)
+    // ===========================================
 
-        /** * BARU: Admin mesti log masuk untuk membenarkan penulisan data.
-         * Kami menggunakan Anonymous Sign-in sebagai contoh untuk memenuhi syarat auth != null.
-         * Untuk produksi, ganti dengan Email/Google Auth.
-         */
-        async function adminLogin() {
-            try {
-                // Sila tukar kepada kaedah log masuk sebenar (Email/Password, Google, dll.)
-                const result = await auth.signInAnonymously();
-                
-                if (result.user) {
-                    setUserRole('Admin'); // Set semula peranan selepas log masuk berjaya
-                    alert(`Admin berjaya log masuk! Anda kini boleh menyimpan keputusan.`);
-                    document.getElementById('user-auth').innerHTML = '<p style="color: green; font-weight: bold;">✅ Admin Berjaya Log Masuk</p>';
-                }
-            } catch (error) {
-                console.error("Ralat Log Masuk Admin:", error);
-                alert(`RALAT LOG MASUK: Gagal log masuk. ${error.message}. Sila semak konsol dan seting Firebase Auth.`);
+    /** * BARU: Admin mesti log masuk untuk membenarkan penulisan data.
+     * Kami menggunakan Anonymous Sign-in sebagai contoh untuk memenuhi syarat auth != null.
+     * Untuk produksi, ganti dengan Email/Google Auth.
+     */
+    async function adminLogin() {
+        try {
+            // Sila tukar kepada kaedah log masuk sebenar (Email/Password, Google, dll.)
+            const result = await auth.signInAnonymously();
+            
+            if (result.user) {
+                setUserRole('Admin'); // Set semula peranan selepas log masuk berjaya
+                alert(`Admin berjaya log masuk! Anda kini boleh menyimpan keputusan.`);
+                document.getElementById('user-auth').innerHTML = '<p style="color: green; font-weight: bold;">✅ Admin Berjaya Log Masuk</p>';
             }
+        } catch (error) {
+            console.error("Ralat Log Masuk Admin:", error);
+            alert(`RALAT LOG MASUK: Gagal log masuk. ${error.message}. Sila semak konsol dan seting Firebase Auth.`);
         }
+    }
 
 
-        /** * Fungsi untuk menyimpan data ke Firestore (Write: auth != null). */
-        async function simpanDataKeFirebase() {
-            if (!auth.currentUser) {
-                 alert('RALAT: Anda mesti log masuk sebagai Admin untuk menyimpan data keputusan!');
-                 return;
+    /** * Fungsi untuk menyimpan data ke Firestore (Write: auth != null). */
+    async function simpanDataKeFirebase() {
+        if (!auth.currentUser) {
+             alert('RALAT: Anda mesti log masuk sebagai Admin untuk menyimpan data keputusan!');
+             return;
+        }
+        
+        console.log("Menyimpan data ke Firebase...");
+        try {
+            // 1. Simpan Mata dan Rekod sebagai dokumen khas
+            // Dokumen ID: 'sk_abang_gesa_mata' dan 'rekod_rasmi'
+            await db.collection(KEPUTUSAN_COLLECTION_PATH).doc('sk_abang_gesa_mata').set(MATA_RUMAH_SUKAN);
+            await db.collection(KEPUTUSAN_COLLECTION_PATH).doc('rekod_rasmi').set(REKOD_KEJOHANAN);
+            
+            // 2. Simpan Keputusan Acara (Padam & Ganti semua keputusan acara)
+            // Hanya query dokumen yang mempunyai field 'jenis' untuk mengelakkan padam 'mata'/'rekod'
+            const snapshot = await db.collection(KEPUTUSAN_COLLECTION_PATH).where('jenis', 'in', ['Individu', 'Relay']).get();
+            const batch = db.batch();
+            snapshot.docs.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+
+            // Simpan keputusan baru
+            const newBatch = db.batch();
+            KEPUTUSAN_KESELURUHAN.forEach(k => {
+                const newDocRef = db.collection(KEPUTUSAN_COLLECTION_PATH).doc();
+                newBatch.set(newDocRef, { ...k, jenis: k.jenis || 'Individu' }); 
+            });
+            await newBatch.commit();
+
+            console.log('Semua data kejohanan berjaya disimpan ke Firestore!');
+        } catch (e) {
+            console.error("Ralat semasa menyimpan data ke Firestore: ", e);
+            alert('RALAT: Gagal menyimpan data ke pangkalan data awan. Lihat konsol untuk butiran.');
+        }
+    }
+
+    /** * Fungsi untuk memuatkan data dari Firestore (Read: if true). */
+    async function muatDataDariFirebase() {
+        try {
+            console.log("Memuatkan data dari Firebase...");
+            
+            // 1. Muat Mata dan Rekod
+            const mataDoc = await db.collection(KEPUTUSAN_COLLECTION_PATH).doc('sk_abang_gesa_mata').get();
+            if (mataDoc.exists) {
+                MATA_RUMAH_SUKAN = mataDoc.data();
             }
             
-            console.log("Menyimpan data ke Firebase...");
+            const rekodDoc = await db.collection(KEPUTUSAN_COLLECTION_PATH).doc('rekod_rasmi').get();
+            if (rekodDoc.exists) {
+                REKOD_KEJOHANAN = rekodDoc.data();
+                console.log('Rekod Kejohanan dimuatkan:', REKOD_KEJOHANAN);
+            }
+
+            // 2. Muat Keputusan Keseluruhan (hanya dokumen acara)
+            const keputusanSnapshot = await db.collection(KEPUTUSAN_COLLECTION_PATH).where('jenis', 'in', ['Individu', 'Relay']).get();
+            KEPUTUSAN_KESELURUHAN = [];
+            keputusanSnapshot.forEach(doc => {
+                KEPUTUSAN_KESELURUHAN.push(doc.data());
+            });
+            console.log(`${KEPUTUSAN_KESELURUHAN.length} keputusan acara dimuatkan.`);
+            
+            // Selepas memuatkan, kemas kini UI
+            generateMataRumahSukanTable();
+            updateDashboard();
+            
+        } catch (e) {
+            console.error("Ralat semasa memuatkan data dari Firestore: ", e);
+            alert('RALAT: Gagal memuatkan data dari pangkalan data awan. Data mungkin kosong atau ralat konfigurasi.');
+        }
+    }
+    
+    /** * Fungsi untuk RESET SEMUA DATA di Firestore. */
+    async function resetSemuaData() {
+        if (!auth.currentUser) {
+             alert('RALAT: Anda mesti log masuk sebagai Admin untuk mereset data!');
+             return;
+        }
+
+        if (confirm('ADAKAH ANDA PASTI? Ini akan memadam SEMUA keputusan, mata, dan rekod yang disimpan dalam Firestore!')) {
             try {
-                // 1. Simpan Mata dan Rekod sebagai dokumen khas
-                // Dokumen ID: 'sk_abang_gesa_mata' dan 'rekod_rasmi'
-                await db.collection(KEPUTUSAN_COLLECTION_PATH).doc('sk_abang_gesa_mata').set(MATA_RUMAH_SUKAN);
-                await db.collection(KEPUTUSAN_COLLECTION_PATH).doc('rekod_rasmi').set(REKOD_KEJOHANAN);
+                // 1. Padam Dokumen Khas (Mata & Rekod)
+                await db.collection(KEPUTUSAN_COLLECTION_PATH).doc('sk_abang_gesa_mata').delete();
+                await db.collection(KEPUTUSAN_COLLECTION_PATH).doc('rekod_rasmi').delete();
                 
-                // 2. Simpan Keputusan Acara (Padam & Ganti semua keputusan acara)
-                // Hanya query dokumen yang mempunyai field 'jenis' untuk mengelakkan padam 'mata'/'rekod'
+                // 2. Padam Semua Keputusan Acara
                 const snapshot = await db.collection(KEPUTUSAN_COLLECTION_PATH).where('jenis', 'in', ['Individu', 'Relay']).get();
                 const batch = db.batch();
                 snapshot.docs.forEach(doc => batch.delete(doc.ref));
                 await batch.commit();
-
-                // Simpan keputusan baru
-                const newBatch = db.batch();
-                KEPUTUSAN_KESELURUHAN.forEach(k => {
-                    const newDocRef = db.collection(KEPUTUSAN_COLLECTION_PATH).doc();
-                    newBatch.set(newDocRef, { ...k, jenis: k.jenis || 'Individu' }); 
-                });
-                await newBatch.commit();
-
-                console.log('Semua data kejohanan berjaya disimpan ke Firestore!');
-            } catch (e) {
-                console.error("Ralat semasa menyimpan data ke Firestore: ", e);
-                alert('RALAT: Gagal menyimpan data ke pangkalan data awan. Lihat konsol untuk butiran.');
-            }
-        }
-
-        /** * Fungsi untuk memuatkan data dari Firestore (Read: if true). */
-        async function muatDataDariFirebase() {
-            try {
-                console.log("Memuatkan data dari Firebase...");
                 
-                // 1. Muat Mata dan Rekod
-                const mataDoc = await db.collection(KEPUTUSAN_COLLECTION_PATH).doc('sk_abang_gesa_mata').get();
-                if (mataDoc.exists) {
-                    MATA_RUMAH_SUKAN = mataDoc.data();
-                }
-                
-                const rekodDoc = await db.collection(KEPUTUSAN_COLLECTION_PATH).doc('rekod_rasmi').get();
-                if (rekodDoc.exists) {
-                    REKOD_KEJOHANAN = rekodDoc.data();
-                    console.log('Rekod Kejohanan dimuatkan:', REKOD_KEJOHANAN);
-                }
-
-                // 2. Muat Keputusan Keseluruhan (hanya dokumen acara)
-                const keputusanSnapshot = await db.collection(KEPUTUSAN_COLLECTION_PATH).where('jenis', 'in', ['Individu', 'Relay']).get();
+                // Reset pemboleh ubah global
                 KEPUTUSAN_KESELURUHAN = [];
-                keputusanSnapshot.forEach(doc => {
-                    KEPUTUSAN_KESELURUHAN.push(doc.data());
-                });
-                console.log(`${KEPUTUSAN_KESELURUHAN.length} keputusan acara dimuatkan.`);
-                
-                // Selepas memuatkan, kemas kini UI
-                generateMataRumahSukanTable();
-                updateDashboard();
-                
-            } catch (e) {
-                console.error("Ralat semasa memuatkan data dari Firestore: ", e);
-                alert('RALAT: Gagal memuatkan data dari pangkalan data awan. Data mungkin kosong atau ralat konfigurasi.');
-            }
-        }
-        
-        /** * Fungsi untuk RESET SEMUA DATA di Firestore. */
-        async function resetSemuaData() {
-            if (!auth.currentUser) {
-                 alert('RALAT: Anda mesti log masuk sebagai Admin untuk mereset data!');
-                 return;
-            }
-
-            if (confirm('ADAKAH ANDA PASTI? Ini akan memadam SEMUA keputusan, mata, dan rekod yang disimpan dalam Firestore!')) {
-                try {
-                    // 1. Padam Dokumen Khas (Mata & Rekod)
-                    await db.collection(KEPUTUSAN_COLLECTION_PATH).doc('sk_abang_gesa_mata').delete();
-                    await db.collection(KEPUTUSAN_COLLECTION_PATH).doc('rekod_rasmi').delete();
-                    
-                    // 2. Padam Semua Keputusan Acara
-                    const snapshot = await db.collection(KEPUTUSAN_COLLECTION_PATH).where('jenis', 'in', ['Individu', 'Relay']).get();
-                    const batch = db.batch();
-                    snapshot.docs.forEach(doc => batch.delete(doc.ref));
-                    await batch.commit();
-                    
-                    // Reset pemboleh ubah global
-                    KEPUTUSAN_KESELURUHAN = [];
-                    MATA_RUMAH_SUKAN = { /* ... */ }; // Reset to initial state
-                    REKOD_KEJOHANAN = {};
-                    
-                    alert('Data kejohanan telah berjaya dipadam dan direset dari Firestore!');
-                    window.location.reload(); 
-                } catch (e) {
-                     console.error("Ralat semasa reset data: ", e);
-                     alert('RALAT: Gagal mereset data. Lihat konsol untuk butiran.');
-                }
-            }
-        }
-
-        // ===========================================
-        // FUNGSI UTILITI UMUM
-        // ===========================================
-
-        function setUserRole(role) {
-            USER_ROLE = role;
-            const adminElements = document.querySelectorAll('.admin-only');
-            
-            if (role === 'Admin') {
-                adminElements.forEach(el => el.style.display = 'inline-block');
-                if (!auth.currentUser) {
-                    document.getElementById('user-auth').innerHTML = '<h2>Admin: Sila Log Masuk</h2><button class="action-btn" onclick="adminLogin()">Log Masuk Admin</button>';
-                } else {
-                    document.getElementById('user-auth').innerHTML = '<p style="color: green; font-weight: bold;">✅ Admin Berjaya Log Masuk</p>';
-                }
-                showView('janaIndividu');
-            } else {
-                adminElements.forEach(el => el.style.display = 'none');
-                document.getElementById('user-auth').innerHTML = '<h2>Pilih Peranan Anda</h2><button class="action-btn" onclick="setUserRole(\'Admin\')">Admin (Jana Keputusan)</button><button class="action-btn" onclick="setUserRole(\'User\')">Pengguna (Lihat Papan Mata)</button>';
-                showView('dashboard');
-            }
-        }
-
-        function showView(viewId) {
-            document.querySelectorAll('.view-section').forEach(section => {
-                section.style.display = 'none';
-            });
-            document.getElementById(viewId).style.display = 'block';
-        }
-
-        // Fungsi yang lain (parseCSV, KiraMata, SemakRekod, KiraKedudukan, generateMataRumahSukanTable, updateDashboard, simpanKeputusanIndividu, simpanKeputusanRelay) kekal sama
-        // Pastikan panggilan simpanan di dalam simpanKeputusanIndividu() dan simpanKeputusanRelay() menunjuk kepada simpanDataKeFirebase()
-
-        // --- Fungsi Pengiraan Mata/Kedudukan/Rekod ---
-        
-        function parseCatatan(catatan) {
-            // Tukar Catatan (e.g., 12.5s, 5.2m) kepada float untuk perbandingan
-            const value = parseFloat(catatan.replace(/[^\d.]/g, ''));
-            const isDistance = catatan.includes('m') || catatan.includes('cm'); // True jika acara padang
-            return { value, isDistance };
-        }
-
-        function SemakRekod(acara, kategori, catatan) {
-            const kunci = `${acara}_${kategori}`;
-            const { value: catatanBaru, isDistance } = parseCatatan(catatan);
-
-            if (!REKOD_KEJOHANAN[kunci]) {
-                // Rekod baru
-                REKOD_KEJOHANAN[kunci] = {
-                    nama: '',
-                    rumah: '',
-                    catatan: catatan,
-                    jenis: isDistance ? 'Padang' : 'Balapan'
+                MATA_RUMAH_SUKAN = { 
+                    'KUNING': { mata: 0, emas: 0, perak: 0, gangsa: 0 }, 
+                    'BIRU': { mata: 0, emas: 0, perak: 0, gangsa: 0 }, 
+                    'MERAH': { mata: 0, emas: 0, perak: 0, gangsa: 0 }, 
+                    'HIJAU': { mata: 0, emas: 0, perak: 0, gangsa: 0 } 
                 };
-                return true; // Sentiasa rekod jika tiada rekod lama
+                REKOD_KEJOHANAN = {};
+                
+                alert('Data kejohanan telah berjaya dipadam dan direset dari Firestore!');
+                window.location.reload(); 
+            } catch (e) {
+                 console.error("Ralat semasa reset data: ", e);
+                 alert('RALAT: Gagal mereset data. Lihat konsol untuk butiran.');
             }
+        }
+    }
 
-            const { value: catatanLama } = parseCatatan(REKOD_KEJOHANAN[kunci].catatan);
+    // ===========================================
+    // FUNGSI UTILITI UMUM
+    // ===========================================
 
-            let pecahRekod = false;
-            
-            if (isDistance) {
-                // Acara Padang: Lebih besar lebih baik
-                if (catatanBaru > catatanLama) {
-                    pecahRekod = true;
-                }
+    function setUserRole(role) {
+        USER_ROLE = role;
+        const adminElements = document.querySelectorAll('.admin-only');
+        
+        if (role === 'Admin') {
+            adminElements.forEach(el => el.style.display = 'inline-block');
+            if (!auth.currentUser) {
+                document.getElementById('user-auth').innerHTML = '<h2>Admin: Sila Log Masuk</h2><button class="action-btn" onclick="adminLogin()">Log Masuk Admin</button>';
             } else {
-                // Acara Balapan (Masa): Lebih kecil lebih baik
-                if (catatanBaru < catatanLama) {
-                    pecahRekod = true;
-                }
+                document.getElementById('user-auth').innerHTML = '<p style="color: green; font-weight: bold;">✅ Admin Berjaya Log Masuk</p>';
             }
+            showView('janaIndividu');
+        } else {
+            adminElements.forEach(el => el.style.display = 'none');
+            document.getElementById('user-auth').innerHTML = '<h2>Pilih Peranan Anda</h2><button class="action-btn" onclick="setUserRole(\'Admin\')">Admin (Jana Keputusan)</button><button class="action-btn" onclick="setUserRole(\'User\')">Pengguna (Lihat Papan Mata)</button>';
+            showView('dashboard');
+        }
+    }
 
-            if (pecahRekod) {
-                REKOD_KEJOHANAN[kunci].catatan = catatan;
-                return true;
-            }
-            return false;
+    function showView(viewId) {
+        document.querySelectorAll('.view-section').forEach(section => {
+            section.style.display = 'none';
+        });
+        document.getElementById(viewId).style.display = 'block';
+    }
+
+    // --- Fungsi Dinamik untuk Borang Acara ---
+
+    function updateAcaraDropdown() {
+        const jenis = document.getElementById('jenis-acara').value;
+        const acaraSelect = document.getElementById('acara-dinamik');
+        
+        // Kosongkan senarai acara
+        acaraSelect.innerHTML = '<option value="">Pilih Acara</option>';
+        
+        let acaraList = [];
+        if (jenis === 'Individu') {
+            acaraList = ACARA_INDIVIDU;
+        } else if (jenis === 'Relay') {
+            acaraList = ACARA_RELAY;
+        }
+        
+        // Isi semula dropdown
+        acaraList.forEach(acara => {
+            const option = document.createElement('option');
+            option.value = acara;
+            option.textContent = acara;
+            acaraSelect.appendChild(option);
+        });
+
+        // Tunjuk atau sembunyi input field mengikut jenis acara
+        showHideInputFields(jenis);
+    }
+
+    function showHideInputFields(jenis) {
+        const individuInputs = document.querySelectorAll('#form-individu .label-group:nth-child(n+4):nth-child(-n+8)');
+        const relayInputs = document.querySelectorAll('#form-individu .label-group:nth-child(n+9):nth-child(-n+12)');
+        
+        if (jenis === 'Individu') {
+            individuInputs.forEach(el => el.style.display = 'block');
+            relayInputs.forEach(el => el.style.display = 'none');
+        } else if (jenis === 'Relay') {
+            individuInputs.forEach(el => el.style.display = 'none');
+            relayInputs.forEach(el => el.style.display = 'block');
+        } else {
+            individuInputs.forEach(el => el.style.display = 'block');
+            relayInputs.forEach(el => el.style.display = 'none');
+        }
+    }
+
+    // --- Fungsi Pengiraan Mata/Kedudukan/Rekod ---
+    
+    function parseCatatan(catatan) {
+        // Tukar Catatan (e.g., 12.5s, 5.2m) kepada float untuk perbandingan
+        const value = parseFloat(catatan.replace(/[^\d.]/g, ''));
+        const isDistance = catatan.includes('m') || catatan.includes('cm'); // True jika acara padang
+        return { value, isDistance };
+    }
+
+    function SemakRekod(acara, kategori, catatan) {
+        const kunci = `${acara}_${kategori}`;
+        const { value: catatanBaru, isDistance } = parseCatatan(catatan);
+
+        if (!REKOD_KEJOHANAN[kunci]) {
+            // Rekod baru
+            REKOD_KEJOHANAN[kunci] = {
+                nama: '',
+                rumah: '',
+                catatan: catatan,
+                jenis: isDistance ? 'Padang' : 'Balapan'
+            };
+            return true; // Sentiasa rekod jika tiada rekod lama
         }
 
-        function KiraMata(kedudukan, jenisAcara, rumah) {
-            let mata;
-            let pingat = '';
-            
-            if (jenisAcara === 'Individu') {
-                mata = SKALA_MATA_INDIVIDU[kedudukan - 1] || 0;
-            } else if (jenisAcara === 'Relay') {
-                mata = SKALA_MATA_RELAY[kedudukan - 1] || 0;
-            } else {
-                mata = 0;
+        const { value: catatanLama } = parseCatatan(REKOD_KEJOHANAN[kunci].catatan);
+
+        let pecahRekod = false;
+        
+        if (isDistance) {
+            // Acara Padang: Lebih besar lebih baik
+            if (catatanBaru > catatanLama) {
+                pecahRekod = true;
             }
-
-            if (kedudukan === 1) pingat = 'Emas';
-            else if (kedudukan === 2) pingat = 'Perak';
-            else if (kedudukan === 3) pingat = 'Gangsa';
-
-            // Kemas kini mata dan pingat rumah sukan
-            if (rumah && MATA_RUMAH_SUKAN[rumah]) {
-                MATA_RUMAH_SUKAN[rumah].mata += mata;
-                if (pingat === 'Emas') MATA_RUMAH_SUKAN[rumah].emas += 1;
-                else if (pingat === 'Perak') MATA_RUMAH_SUKAN[rumah].perak += 1;
-                else if (pingat === 'Gangsa') MATA_RUMAH_SUKAN[rumah].gangsa += 1;
+        } else {
+            // Acara Balapan (Masa): Lebih kecil lebih baik
+            if (catatanBaru < catatanLama) {
+                pecahRekod = true;
             }
-
-            return { mata, pingat };
         }
 
-        function KiraKedudukan(keputusanAcara) {
-            // Sort kedudukan mengikut catatan
-            // NOTA: Ini adalah logik mudah. Dalam sistem sebenar, ia lebih kompleks.
+        if (pecahRekod) {
+            REKOD_KEJOHANAN[kunci].catatan = catatan;
+            return true;
+        }
+        return false;
+    }
+
+    function KiraMata(kedudukan, jenisAcara, rumah) {
+        let mata;
+        let pingat = '';
+        
+        if (jenisAcara === 'Individu') {
+            mata = SKALA_MATA_INDIVIDU[kedudukan - 1] || 0;
+        } else if (jenisAcara === 'Relay') {
+            mata = SKALA_MATA_RELAY[kedudukan - 1] || 0;
+        } else {
+            mata = 0;
+        }
+
+        if (kedudukan === 1) pingat = 'Emas';
+        else if (kedudukan === 2) pingat = 'Perak';
+        else if (kedudukan === 3) pingat = 'Gangsa';
+
+        // Kemas kini mata dan pingat rumah sukan
+        if (rumah && MATA_RUMAH_SUKAN[rumah]) {
+            MATA_RUMAH_SUKAN[rumah].mata += mata;
+            if (pingat === 'Emas') MATA_RUMAH_SUKAN[rumah].emas += 1;
+            else if (pingat === 'Perak') MATA_RUMAH_SUKAN[rumah].perak += 1;
+            else if (pingat === 'Gangsa') MATA_RUMAH_SUKAN[rumah].gangsa += 1;
+        }
+
+        return { mata, pingat };
+    }
+
+    function KiraKedudukan(keputusanAcara) {
+        // Sort kedudukan mengikut catatan
+        // NOTA: Ini adalah logik mudah. Dalam sistem sebenar, ia lebih kompleks.
+        
+        // 1. Parse semua catatan ke nilai float dan tandakan jenis
+        const dataPenuh = keputusanAcara.map(k => ({
+            ...k,
+            ...parseCatatan(k.catatan)
+        })).filter(k => k.value > 0); // Buang yang tiada catatan
+
+        if (dataPenuh.length === 0) return [];
+
+        const isDistanceEvent = dataPenuh.some(k => k.isDistance);
+
+        // 2. Sort data
+        dataPenuh.sort((a, b) => {
+            if (isDistanceEvent) {
+                // Acara Padang: Catatan besar di atas (descending)
+                return b.value - a.value;
+            } else {
+                // Acara Balapan (Masa): Catatan kecil di atas (ascending)
+                return a.value - b.value;
+            }
+        });
+
+        // 3. Tetapkan kedudukan dan kira mata
+        let kedudukan = 1;
+        const keputusanAkhir = [];
+        
+        for (let i = 0; i < dataPenuh.length; i++) {
+            // Jika catatan sama dengan yang sebelumnya, kedudukan dikekalkan
+            if (i > 0 && dataPenuh[i].value === dataPenuh[i-1].value) {
+                // Jangan buat apa-apa
+            } else {
+                kedudukan = i + 1;
+            }
             
-            // 1. Parse semua catatan ke nilai float dan tandakan jenis
-            const dataPenuh = keputusanAcara.map(k => ({
-                ...k,
-                ...parseCatatan(k.catatan)
-            })).filter(k => k.value > 0); // Buang yang tiada catatan
-
-            if (dataPenuh.length === 0) return [];
-
-            const isDistanceEvent = dataPenuh.some(k => k.isDistance);
-
-            // 2. Sort data
-            dataPenuh.sort((a, b) => {
-                if (isDistanceEvent) {
-                    // Acara Padang: Catatan besar di atas (descending)
-                    return b.value - a.value;
-                } else {
-                    // Acara Balapan (Masa): Catatan kecil di atas (ascending)
-                    return a.value - b.value;
-                }
+            const { mata, pingat } = KiraMata(kedudukan, dataPenuh[i].jenis, dataPenuh[i].rumah);
+            const pecahRekod = SemakRekod(dataPenuh[i].acara, dataPenuh[i].kategori, dataPenuh[i].catatan);
+            
+            keputusanAkhir.push({
+                kedudukan: kedudukan,
+                nama: dataPenuh[i].nama,
+                rumah: dataPenuh[i].rumah,
+                catatan: dataPenuh[i].catatan + (pecahRekod ? ' (REKOD BARU)' : ''),
+                mata: mata,
+                pingat: pingat,
+                acara: dataPenuh[i].acara,
+                kategori: dataPenuh[i].kategori,
+                jenis: dataPenuh[i].jenis
             });
-
-            // 3. Tetapkan kedudukan dan kira mata
-            let kedudukan = 1;
-            const keputusanAkhir = [];
-            
-            for (let i = 0; i < dataPenuh.length; i++) {
-                // Jika catatan sama dengan yang sebelumnya, kedudukan dikekalkan
-                if (i > 0 && dataPenuh[i].value === dataPenuh[i-1].value) {
-                    // Jangan buat apa-apa
-                } else {
-                    kedudukan = i + 1;
-                }
-                
-                const { mata, pingat } = KiraMata(kedudukan, dataPenuh[i].jenis, dataPenuh[i].rumah);
-                const pecahRekod = SemakRekod(dataPenuh[i].acara, dataPenuh[i].kategori, dataPenuh[i].catatan);
-                
-                keputusanAkhir.push({
-                    kedudukan: kedudukan,
-                    nama: dataPenuh[i].nama,
-                    rumah: dataPenuh[i].rumah,
-                    catatan: dataPenuh[i].catatan + (pecahRekod ? ' (REKOD BARU)' : ''),
-                    mata: mata,
-                    pingat: pingat,
-                    acara: dataPenuh[i].acara,
-                    kategori: dataPenuh[i].kategori,
-                    jenis: dataPenuh[i].jenis
-                });
-            }
-
-            return keputusanAkhir;
         }
 
-        function generateMataRumahSukanTable() {
-            const container = document.getElementById('mata-rumah-sukan');
-            let html = `
+        return keputusanAkhir;
+    }
+
+    function generateMataRumahSukanTable() {
+        const container = document.getElementById('mata-rumah-sukan');
+        let html = `
+            <table>
+                <tr>
+                    <th>Rumah Sukan</th>
+                    <th>Pingat Emas</th>
+                    <th>Pingat Perak</th>
+                    <th>Pingat Gangsa</th>
+                    <th>Jumlah Mata</th>
+                </tr>
+        `;
+
+        // Tukar objek MATA_RUMAH_SUKAN kepada array dan sort mengikut mata
+        const sortedMata = Object.entries(MATA_RUMAH_SUKAN)
+            .map(([nama, data]) => ({ nama, ...data }))
+            .sort((a, b) => b.mata - a.mata);
+
+        sortedMata.forEach(rumah => {
+            html += `
+                <tr class="${rumah.nama.toUpperCase()}">
+                    <td>${rumah.nama}</td>
+                    <td>${rumah.emas}</td>
+                    <td>${rumah.perak}</td>
+                    <td>${rumah.gangsa}</td>
+                    <td>**${rumah.mata}**</td>
+                </tr>
+            `;
+        });
+
+        html += `</table>`;
+        container.innerHTML = html;
+    }
+
+    function updateDashboard() {
+        generateMataRumahSukanTable();
+        
+        const container = document.getElementById('keputusan-keseluruhan');
+        container.innerHTML = ''; 
+
+        // Kelompokkan keputusan mengikut Acara & Kategori
+        const grouped = KEPUTUSAN_KESELURUHAN.reduce((acc, curr) => {
+            const key = `${curr.acara} - ${curr.kategori}`;
+            if (!acc[key]) {
+                acc[key] = [];
+            }
+            acc[key].push(curr);
+            return acc;
+        }, {});
+
+        for (const key in grouped) {
+            const results = grouped[key].sort((a, b) => a.kedudukan - b.kedudukan);
+            let html = `<div class="keputusan-acara">
+                <h3>${key}</h3>
                 <table>
                     <tr>
-                        <th>Rumah Sukan</th>
-                        <th>Pingat Emas</th>
-                        <th>Pingat Perak</th>
-                        <th>Pingat Gangsa</th>
-                        <th>Jumlah Mata</th>
+                        <th>Ked.</th>
+                        <th>Nama/Pasukan</th>
+                        <th>Rumah</th>
+                        <th>Catatan</th>
+                        <th>Mata</th>
                     </tr>
             `;
 
-            // Tukar objek MATA_RUMAH_SUKAN kepada array dan sort mengikut mata
-            const sortedMata = Object.entries(MATA_RUMAH_SUKAN)
-                .map(([nama, data]) => ({ nama, ...data }))
-                .sort((a, b) => b.mata - a.mata);
-
-            sortedMata.forEach(rumah => {
+            results.forEach(k => {
+                const pingatClass = k.pingat ? `pingat-${k.pingat}` : '';
                 html += `
-                    <tr class="${rumah.nama.toUpperCase()}">
-                        <td>${rumah.nama}</td>
-                        <td>${rumah.emas}</td>
-                        <td>${rumah.perak}</td>
-                        <td>${rumah.gangsa}</td>
-                        <td>**${rumah.mata}**</td>
+                    <tr class="${k.rumah.toUpperCase()} ${pingatClass}">
+                        <td>**${k.kedudukan}**</td>
+                        <td>${k.nama}</td>
+                        <td>${k.rumah}</td>
+                        <td>${k.catatan}</td>
+                        <td>${k.mata}</td>
                     </tr>
                 `;
             });
 
-            html += `</table>`;
-            container.innerHTML = html;
+            html += `</table></div>`;
+            container.innerHTML += html;
+        }
+    }
+
+    // --- Fungsi Simpan Keputusan (Dinamik untuk Individu & Relay) ---
+
+    function simpanKeputusanAcara() {
+        const jenisAcara = document.getElementById('jenis-acara').value;
+        const acara = document.getElementById('acara-dinamik').value;
+        const kategori = document.getElementById('kategori-individu').value;
+
+        if (!jenisAcara || !acara || !kategori) {
+            alert('Sila lengkapkan semua medan.');
+            return;
         }
 
-        function updateDashboard() {
-            generateMataRumahSukanTable();
-            
-            const container = document.getElementById('keputusan-keseluruhan');
-            container.innerHTML = ''; 
+        let keputusanInput = [];
 
-            // Kelompokkan keputusan mengikut Acara & Kategori
-            const grouped = KEPUTUSAN_KESELURUHAN.reduce((acc, curr) => {
-                const key = `${curr.acara} - ${curr.kategori}`;
-                if (!acc[key]) {
-                    acc[key] = [];
-                }
-                acc[key].push(curr);
-                return acc;
-            }, {});
-
-            for (const key in grouped) {
-                const results = grouped[key].sort((a, b) => a.kedudukan - b.kedudukan);
-                let html = `<div class="keputusan-acara">
-                    <h3>${key}</h3>
-                    <table>
-                        <tr>
-                            <th>Ked.</th>
-                            <th>Nama/Pasukan</th>
-                            <th>Rumah</th>
-                            <th>Catatan</th>
-                            <th>Mata</th>
-                        </tr>
-                `;
-
-                results.forEach(k => {
-                    const pingatClass = k.pingat ? `pingat-${k.pingat}` : '';
-                    html += `
-                        <tr class="${k.rumah.toUpperCase()} ${pingatClass}">
-                            <td>**${k.kedudukan}**</td>
-                            <td>${k.nama}</td>
-                            <td>${k.rumah}</td>
-                            <td>${k.catatan}</td>
-                            <td>${k.mata}</td>
-                        </tr>
-                    `;
-                });
-
-                html += `</table></div>`;
-                container.innerHTML += html;
-            }
-        }
-
-        function simpanKeputusanIndividu() {
-            const acara = document.getElementById('acara-individu').value;
-            const kategori = document.getElementById('kategori-individu').value;
-
-            // Buat objek sementara untuk semua kedudukan yang diisi
-            const keputusanInput = [];
+        if (jenisAcara === 'Individu') {
+            // Input Top 5
             for (let i = 1; i <= 5; i++) {
                 const nama = document.getElementById(`n${i}`).value.trim();
                 const rumah = document.getElementById(`r${i}`).value;
@@ -682,7 +738,7 @@
                 
                 if (nama && rumah && catatan) {
                     keputusanInput.push({
-                        kedudukan: i, // Kedudukan asal dari input borang
+                        kedudukan: i,
                         nama: nama,
                         rumah: rumah,
                         catatan: catatan,
@@ -692,159 +748,149 @@
                     });
                 }
             }
-
             if (keputusanInput.length === 0) {
                 alert('Sila masukkan sekurang-kurangnya tempat pertama dengan lengkap.');
                 return;
             }
-
-            // Padam keputusan lama untuk acara/kategori yang sama
-            KEPUTUSAN_KESELURUHAN = KEPUTUSAN_KESELURUHAN.filter(k => 
-                !(k.acara === acara && k.kategori === kategori)
-            );
-
-            // Reset mata rumah sukan yang terlibat dalam keputusan lama (logik yang lebih kompleks diperlukan untuk produksi)
-
-            // Kira kedudukan sebenar, mata, dan semak rekod. Ini mengemas kini MATA_RUMAH_SUKAN & REKOD_KEJOHANAN secara global.
-            const keputusanBaru = KiraKedudukan(keputusanInput);
-            
-            // Tambah keputusan baru ke senarai keseluruhan
-            KEPUTUSAN_KESELURUHAN.push(...keputusanBaru);
-
-            // Simpan ke Firebase
-            simpanDataKeFirebase();
-
-            // Kemas kini UI dan kosongkan borang
-            updateDashboard();
-            document.getElementById('form-individu').reset();
-            alert(`Keputusan Acara ${acara} (${kategori}) telah disimpan.`);
-        }
-
-        function simpanKeputusanRelay() {
-            const acara = document.getElementById('acara-relay').value;
-            const kategori = document.getElementById('kategori-relay').value;
-
-            const keputusanInput = [];
+        } else if (jenisAcara === 'Relay') {
+            // Input Top 4 (untuk relay)
             for (let i = 1; i <= 4; i++) {
                 const rumah = document.getElementById(`rr${i}`).value;
                 const catatan = document.getElementById(`rc${i}`).value.trim();
                 
                 if (rumah && catatan) {
                     keputusanInput.push({
-                        kedudukan: i, 
-                        nama: `Pasukan ${rumah}`, // Nama adalah Pasukan Rumah Sukan
+                        kedudukan: i,
+                        nama: `Pasukan ${rumah}`,
                         rumah: rumah,
                         catatan: catatan,
-                        acara: acara,
+                        acara: acara, // Harusnya "4X100 METER"
                         kategori: kategori,
                         jenis: 'Relay'
                     });
                 }
             }
-
             if (keputusanInput.length < 3) {
                 alert('Sila masukkan sekurang-kurangnya tiga pasukan yang lengkap.');
                 return;
             }
+        }
 
-            // Padam keputusan lama
-            KEPUTUSAN_KESELURUHAN = KEPUTUSAN_KESELURUHAN.filter(k => 
-                !(k.acara === acara && k.kategori === kategori)
-            );
+        // Padam keputusan lama untuk acara/kategori yang sama
+        KEPUTUSAN_KESELURUHAN = KEPUTUSAN_KESELURUHAN.filter(k => 
+            !(k.acara === acara && k.kategori === kategori)
+        );
 
-            // Kira kedudukan sebenar, mata, dan semak rekod.
-            const keputusanBaru = KiraKedudukan(keputusanInput);
+        // Kira kedudukan sebenar, mata, dan semak rekod
+        const keputusanBaru = KiraKedudukan(keputusanInput);
+        
+        // Tambah keputusan baru
+        KEPUTUSAN_KESELURUHAN.push(...keputusanBaru);
+
+        // Simpan ke Firebase
+        simpanDataKeFirebase();
+
+        // Kemas kini UI dan kosongkan borang
+        updateDashboard();
+        document.getElementById('form-individu').reset();
+        // Reset dropdown jenis acara
+        document.getElementById('jenis-acara').value = '';
+        document.getElementById('acara-dinamik').innerHTML = '<option value="">Pilih Acara</option>';
+        // Sembunyikan semua input field
+        showHideInputFields('');
+        alert(`Keputusan Acara ${acara} (${kategori}) telah disimpan.`);
+    }
+
+    // --- Fungsi Muat Naik Rekod ---
+
+    function parseRekodCSV(text) {
+        const lines = text.split('\n').filter(line => line.trim() !== '');
+        const rekodBaru = {};
+        
+        lines.forEach((line, index) => {
+            // Ignore header row (index 0) if present
+            if (index === 0 && line.toLowerCase().includes('acara')) return; 
+
+            const parts = line.split(',').map(p => p.trim());
+            if (parts.length < 5) return; // Skip baris tidak lengkap
+
+            const [acara, kategori, nama, rumah, catatan] = parts;
+            const kunci = `${acara.toUpperCase()}_${kategori.toUpperCase()}`;
             
-            // Tambah keputusan baru
-            KEPUTUSAN_KESELURUHAN.push(...keputusanBaru);
+            // Masukkan ke objek REKOD_KEJOHANAN
+            rekodBaru[kunci] = {
+                nama: nama,
+                rumah: rumah,
+                catatan: catatan,
+                jenis: ACARA_PADANG.includes(acara.toUpperCase()) ? 'Padang' : 'Balapan'
+            };
+        });
+        return rekodBaru;
+    }
 
+    function muatNaikRekod() {
+        if (!auth.currentUser) {
+             alert('RALAT: Anda mesti log masuk sebagai Admin untuk memuat naik rekod!');
+             return;
+        }
+
+        const fileInput = document.getElementById('csv-rekod');
+        const file = fileInput.files[0];
+
+        if (!file) {
+            alert('Sila pilih fail CSV.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const csvText = e.target.result;
+            const rekodCSV = parseRekodCSV(csvText);
+            
+            // Gantikan rekod lama dengan yang baru dimuat naik
+            REKOD_KEJOHANAN = rekodCSV; 
+            
             // Simpan ke Firebase
             simpanDataKeFirebase();
-
-            // Kemas kini UI dan kosongkan borang
-            updateDashboard();
-            document.getElementById('form-relay').reset();
-            alert(`Keputusan Acara ${acara} (${kategori}) telah disimpan.`);
-        }
-
-        // --- Fungsi Muat Naik Rekod ---
-
-        function parseRekodCSV(text) {
-            const lines = text.split('\n').filter(line => line.trim() !== '');
-            const rekodBaru = {};
             
-            lines.forEach((line, index) => {
-                // Ignore header row (index 0) if present
-                if (index === 0 && line.toLowerCase().includes('acara')) return; 
+            alert(`Berjaya memuat naik dan menyimpan ${Object.keys(rekodCSV).length} rekod kejohanan ke Firestore!`);
+            console.log("Rekod Kejohanan yang Baru Dimuat Naik:", REKOD_KEJOHANAN);
+            fileInput.value = ''; // Kosongkan input file
+            showView('dashboard');
+        };
+        reader.readAsText(file);
+    }
 
-                const parts = line.split(',').map(p => p.trim());
-                if (parts.length < 5) return; // Skip baris tidak lengkap
+    // --- INIT ---
+    document.addEventListener('DOMContentLoaded', () => {
+        muatDataDariFirebase(); // PANGGILAN BARU: Muat dari Firebase
 
-                const [acara, kategori, nama, rumah, catatan] = parts;
-                const kunci = `${acara.toUpperCase()}_${kategori.toUpperCase()}`;
-                
-                // Masukkan ke objek REKOD_KEJOHANAN
-                rekodBaru[kunci] = {
-                    nama: nama,
-                    rumah: rumah,
-                    catatan: catatan,
-                    jenis: ACARA_PADANG.includes(acara.toUpperCase()) ? 'Padang' : 'Balapan'
-                };
-            });
-            return rekodBaru;
-        }
+        // Isi dropdown kategori umur
+        const selectKategori = document.getElementById('kategori-individu');
+        const kategoriOptions = KATEGORI_UMUR.map(k => `<option value="${k}">${k}</option>`).join('');
+        selectKategori.innerHTML = kategoriOptions;
 
-        function muatNaikRekod() {
-            if (!auth.currentUser) {
-                 alert('RALAT: Anda mesti log masuk sebagai Admin untuk memuat naik rekod!');
-                 return;
-            }
+        // Isi dropdown Jenis Acara
+        const selectJenisAcara = document.getElementById('jenis-acara');
+        selectJenisAcara.innerHTML = `
+            <option value="">Pilih Jenis</option>
+            <option value="Individu">Acara Individu</option>
+            <option value="Relay">Acara Relay</option>
+        `;
 
-            const fileInput = document.getElementById('csv-rekod');
-            const file = fileInput.files[0];
+        // Tambah event listener untuk update acara
+        selectJenisAcara.addEventListener('change', updateAcaraDropdown);
 
-            if (!file) {
-                alert('Sila pilih fail CSV.');
-                return;
-            }
+        // Paparkan dashboard secara lalai
+        document.getElementById('user-auth').style.display = 'block';
+        showView('dashboard');
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const csvText = e.target.result;
-                const rekodCSV = parseRekodCSV(csvText);
-                
-                // Gantikan rekod lama dengan yang baru dimuat naik
-                REKOD_KEJOHANAN = rekodCSV; 
-                
-                // Simpan ke Firebase
-                simpanDataKeFirebase();
-                
-                alert(`Berjaya memuat naik dan menyimpan ${Object.keys(rekodCSV).length} rekod kejohanan ke Firestore!`);
-                console.log("Rekod Kejohanan yang Baru Dimuat Naik:", REKOD_KEJOHANAN);
-                fileInput.value = ''; // Kosongkan input file
-                showView('dashboard');
-            };
-            reader.readAsText(file);
-        }
-
-        // --- INIT ---
-        document.addEventListener('DOMContentLoaded', () => {
-            muatDataDariFirebase(); // PANGGILAN BARU: Muat dari Firebase
-
-            const selectAcaraIndividu = document.getElementById('acara-individu');
-            selectAcaraIndividu.innerHTML = ACARA_INDIVIDU.map(a => `<option value="${a}">${a}</option>`).join('');
-
-            const selectKategori = document.getElementById('kategori-individu');
-            const selectKategoriRelay = document.getElementById('kategori-relay');
-            const kategoriOptions = KATEGORI_UMUR.map(k => `<option value="${k}">${k}</option>`).join('');
-            selectKategori.innerHTML = kategoriOptions;
-            selectKategoriRelay.innerHTML = kategoriOptions;
-
-            document.getElementById('user-auth').style.display = 'block';
-            showView('dashboard'); // Paparkan dashboard secara lalai
-            // Panggilan generateMataRumahSukanTable() dipindahkan ke dalam muatDataDariFirebase()
-        });
-    </script>
+        // Muatkan senarai asas untuk dropdown "Acara" (optional)
+        // Jika ingin default to Individu
+        // updateAcaraDropdown();
+    });
+</script>
 </body>
 
 </html>
+
