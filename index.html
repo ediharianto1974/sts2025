@@ -87,13 +87,18 @@
             <h2>Jana Keputusan Acara Individu</h2>
             <form id="form-individu">
                 <div class="label-group">
-                    <label for="acara-individu">Acara:</label>
-                    <select id="acara-individu" required></select>
-                </div>
-                <div class="label-group">
-                    <label for="kategori-individu">Kategori Umur:</label>
-                    <select id="kategori-individu" required></select>
-                </div>
+    <label for="jenis-acara">Jenis Acara:</label>
+    <select id="jenis-acara" required>
+        <option value="">Pilih Jenis</option>
+        <option value="Individu">Acara Individu</option>
+        <option value="Relay">Acara Relay</option>
+    </select>
+</div>
+
+<div class="label-group">
+    <label for="acara-dinamik">Acara:</label>
+    <select id="acara-dinamik" required></select>
+</div>
 
                 <h3>Input Kedudukan (Top 5)</h3>
                 <div class="input-group">
@@ -841,4 +846,5 @@
         });
     </script>
 </body>
+
 </html>
